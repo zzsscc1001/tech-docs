@@ -170,10 +170,16 @@ print(f"Interleaving: Phase2 delayed {shift} samples = {shift*dt*1e6:.3f} us (= 
 Id_total = Id1 + Id2
 
 # 电容电流 = 总二极管电流 - 负载电流
-# 基尔霍夫电流定律：电容吸收多余/补足不足
-Ic = Id_total - Iout
+# 这里使用实际的平均二极管电流代替设定的 Iout，
+# 避免微小的直流偏差在积分环节逐周期累积漂移
+I_d_avg = Id_total.mean()           # 实际平均二极管电流
+Ic = Id_total - I_d_avg             # 电容电流（纯交流分量）
 
-print(f"\nDiode current range: {Id_total.min():.3f} ~ {Id_total.max():.3f} A")
+# 量化 Iout 与实际平均值的误差
+current_error = I_d_avg - Iout
+print(f"\nSpecified I_out = {Iout:.3f} A, Actual avg I_d = {I_d_avg:.3f} A")
+print(f"Current error = {current_error:+.4f} A ({current_error/Iout*100:+.2f}%)")
+print(f"Diode current range: {Id_total.min():.3f} ~ {Id_total.max():.3f} A")
 print(f"Capacitor current range: {Ic.min():.3f} ~ {Ic.max():.3f} A")
 
 # ────────────────────────────────────────────────────────────
