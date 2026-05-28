@@ -32,28 +32,28 @@ alpha = 0.5     # 主相电流比例，0.5 = 两相均分
 
 # 开关周期 (s)
 T = 1 / fsw
-print(f"开关周期 T = {T*1e6:.3f} µs")
+print(f"Switching period T = {T*1e6:.3f} us")
 
 # 占空比 D
 # 推导：伏秒平衡 → V_in×D = (V_out+V_d)×(1-D)
 # 加入效率修正后：D = 1 - V_in×η / (V_out+V_d)
 D = 1 - (Vin * eta) / (Vout + Vd)
-print(f"占空比 D = {D:.4f} ({D*100:.2f}%)")
+print(f"Duty cycle D = {D:.4f} ({D*100:.2f}%)")
 
 # 总输入电流
 # 功率守恒：V_out × I_out = V_in × I_in × η
 Iin_total = (Vout * Iout) / (Vin * eta)
-print(f"总输入电流 I_in = {Iin_total:.3f} A")
+print(f"Total input current I_in = {Iin_total:.3f} A")
 
 # 每相平均电流（按 alpha 分配）
 IL1_avg = Iin_total * alpha        # 主相
 IL2_avg = Iin_total * (1 - alpha)  # 辅相
-print(f"主相电流 I_L1 = {IL1_avg:.3f} A, 辅相电流 I_L2 = {IL2_avg:.3f} A")
+print(f"Phase 1 current I_L1 = {IL1_avg:.3f} A, Phase 2 current I_L2 = {IL2_avg:.3f} A")
 
 # 电感纹波电流（峰峰值）
 # 推导：导通期间 di/dt = V_in/L，持续时间 = D×T
 dIL = (Vin * D * T) / L
-print(f"电感纹波电流 ΔI_L = {dIL:.3f} A ({dIL*1000:.1f} mA)")
+print(f"Inductor ripple current dI_L = {dIL:.3f} A ({dIL*1000:.1f} mA)")
 
 # ────────────────────────────────────────────────────────────
 # 第三步：仿真单相二极管电流波形
@@ -140,13 +140,13 @@ def calc_phase(Iavg, dI):
 ph1_Id, ph1_mode, ph1_Ipeak, ph1_Ivalley, ph1_Ton, ph1_Toff2 = calc_phase(IL1_avg, dIL)
 ph2_Id, ph2_mode, ph2_Ipeak, ph2_Ivalley, ph2_Ton, ph2_Toff2 = calc_phase(IL2_avg, dIL)
 
-print(f"\n--- Phase 1 ({ph1_mode}, α={alpha*100:.0f}%) ---")
+print(f"\n--- Phase 1 ({ph1_mode}, alpha={alpha*100:.0f}%) ---")
 print(f"  I_peak = {ph1_Ipeak:.3f} A, I_valley = {ph1_Ivalley:.3f} A")
-print(f"  T_on = {ph1_Ton*1e6:.3f} µs, T_off2 = {ph1_Toff2*1e6:.3f} µs")
+print(f"  T_on = {ph1_Ton*1e6:.3f} us, T_off2 = {ph1_Toff2*1e6:.3f} us")
 
-print(f"\n--- Phase 2 ({ph2_mode}, α={(1-alpha)*100:.0f}%) ---")
+print(f"\n--- Phase 2 ({ph2_mode}, alpha={(1-alpha)*100:.0f}%) ---")
 print(f"  I_peak = {ph2_Ipeak:.3f} A, I_valley = {ph2_Ivalley:.3f} A")
-print(f"  T_on = {ph2_Ton*1e6:.3f} µs, T_off2 = {ph2_Toff2*1e6:.3f} µs")
+print(f"  T_on = {ph2_Ton*1e6:.3f} us, T_off2 = {ph2_Toff2*1e6:.3f} us")
 
 # ────────────────────────────────────────────────────────────
 # 第四步：180° 交错移相
@@ -160,7 +160,7 @@ shift = N // 2
 Id1 = ph1_Id
 Id2 = np.roll(ph2_Id, shift)
 
-print(f"交错移相：Phase2 延迟 {shift} 个采样点 = {shift*dt*1e6:.3f} µs (= T/2)")
+print(f"Interleaving: Phase2 delayed {shift} samples = {shift*dt*1e6:.3f} us (= T/2)")
 
 # ────────────────────────────────────────────────────────────
 # 第五步：叠加两相电流，计算电容电流
@@ -173,8 +173,8 @@ Id_total = Id1 + Id2
 # 基尔霍夫电流定律：电容吸收多余/补足不足
 Ic = Id_total - Iout
 
-print(f"\n总二极管电流范围：{Id_total.min():.3f} ~ {Id_total.max():.3f} A")
-print(f"电容电流范围：{Ic.min():.3f} ~ {Ic.max():.3f} A")
+print(f"\nDiode current range: {Id_total.min():.3f} ~ {Id_total.max():.3f} A")
+print(f"Capacitor current range: {Ic.min():.3f} ~ {Ic.max():.3f} A")
 
 # ────────────────────────────────────────────────────────────
 # 第六步：计算电压纹波
@@ -194,14 +194,14 @@ Vesr = Ic * ESR
 Vripple = Vc + Vesr
 
 # 计算峰峰值
-Vc_pp     = Vc.max() - Vc.min()
-Vesr_pp   = Vesr.max() - Vesr.min()
+Vc_pp      = Vc.max() - Vc.min()
+Vesr_pp    = Vesr.max() - Vesr.min()
 Vripple_pp = Vripple.max() - Vripple.min()
 
-print(f"\n=== 纹波结果 ===")
-print(f"电容纹波 V_C(p-p)    = {Vc_pp*1e3:.2f} mV")
-print(f"ESR 纹波 V_ESR(p-p)  = {Vesr_pp*1e3:.2f} mV")
-print(f"总输出纹波 V(p-p)    = {Vripple_pp*1e3:.2f} mV")
+print(f"\n=== Ripple Results ===")
+print(f"Capacitor ripple  V_C(p-p)   = {Vc_pp*1e3:.2f} mV")
+print(f"ESR ripple        V_ESR(p-p) = {Vesr_pp*1e3:.2f} mV")
+print(f"Total output ripple V(p-p)   = {Vripple_pp*1e3:.2f} mV")
 
 # ────────────────────────────────────────────────────────────
 # 第七步：绘图 — 展示 5 个开关周期
@@ -210,16 +210,16 @@ print(f"总输出纹波 V(p-p)    = {Vripple_pp*1e3:.2f} mV")
 # 将单周期波形重复 5 次，展示稳态行为
 NCYCLES = 5
 
-# 时间轴（单位 µs）
-t_plot = np.tile(t_arr, NCYCLES) * 1e6  # 拼接 5 个周期，转 µs
+# 时间轴（单位 us）
+t_plot = np.tile(t_arr, NCYCLES) * 1e6  # 拼接 5 个周期，转 us
 
 # 拼接各波形
-Id1_plot    = np.tile(Id1, NCYCLES)
-Id2_plot    = np.tile(Id2, NCYCLES)
-Idtot_plot  = np.tile(Id_total, NCYCLES)
-Vc_plot     = np.tile(Vc, NCYCLES) * 1e3      # 转 mV
-Vesr_plot   = np.tile(Vesr, NCYCLES) * 1e3    # 转 mV
-Vrip_plot   = np.tile(Vripple, NCYCLES) * 1e3 # 转 mV
+Id1_plot   = np.tile(Id1, NCYCLES)
+Id2_plot   = np.tile(Id2, NCYCLES)
+Idtot_plot = np.tile(Id_total, NCYCLES)
+Vc_plot    = np.tile(Vc, NCYCLES) * 1e3      # 转 mV
+Vesr_plot  = np.tile(Vesr, NCYCLES) * 1e3    # 转 mV
+Vrip_plot  = np.tile(Vripple, NCYCLES) * 1e3 # 转 mV
 
 # 设置绘图风格
 plt.rcParams.update({
@@ -230,38 +230,38 @@ plt.rcParams.update({
 })
 
 fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-fig.suptitle('两相交错非同步 Boost 输出纹波', fontsize=14, fontweight='bold')
+fig.suptitle('Two-Phase Interleaved Non-Sync Boost Output Ripple', fontsize=14, fontweight='bold')
 
 # ── 图1：电流波形 ──
 ax1 = axes[0]
-ax1.plot(t_plot, Id1_plot,   label='I_d1 (主相)',   color='#0070f3', linewidth=1.2)
-ax1.plot(t_plot, Id2_plot,   label='I_d2 (辅相)',   color='#de1d8d', linewidth=1.2)
-ax1.plot(t_plot, Idtot_plot, label='I_d (总)',      color='#171717', linewidth=1.5)
+ax1.plot(t_plot, Id1_plot,   label='I_d1 (Phase 1)', color='#0070f3', linewidth=1.2)
+ax1.plot(t_plot, Id2_plot,   label='I_d2 (Phase 2)', color='#de1d8d', linewidth=1.2)
+ax1.plot(t_plot, Idtot_plot, label='I_d (Total)',    color='#171717', linewidth=1.5)
 ax1.axhline(y=Iout, color='gray', linestyle='--', linewidth=0.8, label=f'I_out = {Iout}A')
-ax1.set_ylabel('电流 (A)')
+ax1.set_ylabel('Current (A)')
 ax1.legend(loc='upper right', fontsize=9)
-ax1.set_title('① 电流时域交错波形')
+ax1.set_title('(1) Interleaved Current Waveforms')
 
 # ── 图2：电压纹波分量 ──
 ax2 = axes[1]
-ax2.plot(t_plot, Vc_plot,   label='V_C (电容纹波)',   color='#0070f3', linewidth=1.2)
-ax2.plot(t_plot, Vesr_plot, label='V_ESR (ESR纹波)',  color='#de1d8d', linewidth=1.2)
-ax2.set_ylabel('电压纹波 (mV)')
+ax2.plot(t_plot, Vc_plot,   label='V_C (Capacitor ripple)', color='#0070f3', linewidth=1.2)
+ax2.plot(t_plot, Vesr_plot, label='V_ESR (ESR ripple)',     color='#de1d8d', linewidth=1.2)
+ax2.set_ylabel('Voltage ripple (mV)')
 ax2.legend(loc='upper right', fontsize=9)
-ax2.set_title('② 电压纹波分量拆解')
+ax2.set_title('(2) Voltage Ripple Components')
 
 # ── 图3：总输出纹波 ──
 ax3 = axes[2]
-ax3.plot(t_plot, Vrip_plot, label='V_ripple (总)', color='#171717', linewidth=1.5)
+ax3.plot(t_plot, Vrip_plot, label='V_ripple (Total)', color='#171717', linewidth=1.5)
 ax3.fill_between(t_plot, Vrip_plot, 0, alpha=0.08, color='#0070f3')
 ax3.axhline(y=0, color='gray', linewidth=0.5)
-ax3.set_xlabel('时间 (µs)')
-ax3.set_ylabel('总纹波 (mV)')
+ax3.set_xlabel('Time (us)')
+ax3.set_ylabel('Total ripple (mV)')
 ax3.legend(loc='upper right', fontsize=9)
-ax3.set_title('③ 总输出电压纹波 V_ripple(t)')
+ax3.set_title('(3) Total Output Voltage Ripple V_ripple(t)')
 
 plt.tight_layout()
 plt.savefig('boost_ripple.png', dpi=150, bbox_inches='tight')
 plt.show()
 
-print(f"\n图片已保存为 boost_ripple.png")
+print(f"\nPlot saved as boost_ripple.png")
