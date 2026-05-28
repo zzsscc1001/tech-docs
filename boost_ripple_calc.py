@@ -208,18 +208,22 @@ print(f"Total output ripple V(p-p)   = {Vripple_pp*1e3:.2f} mV")
 # ────────────────────────────────────────────────────────────
 
 # 将单周期波形重复 5 次，展示稳态行为
+# 注意：拼接时去掉每个周期的最后一个点，避免周期边界处出现对角连线
 NCYCLES = 5
 
 # 时间轴（单位 us）
-t_plot = np.tile(t_arr, NCYCLES) * 1e6  # 拼接 5 个周期，转 us
+t_plot = np.concatenate([t_arr[:-1] + i*T for i in range(NCYCLES)]) * 1e6
 
-# 拼接各波形
-Id1_plot   = np.tile(Id1, NCYCLES)
-Id2_plot   = np.tile(Id2, NCYCLES)
-Idtot_plot = np.tile(Id_total, NCYCLES)
-Vc_plot    = np.tile(Vc, NCYCLES) * 1e3      # 转 mV
-Vesr_plot  = np.tile(Vesr, NCYCLES) * 1e3    # 转 mV
-Vrip_plot  = np.tile(Vripple, NCYCLES) * 1e3 # 转 mV
+# 拼接各波形（每个周期去掉最后一个点）
+def tile(arr, n):
+    return np.concatenate([arr[:-1] for _ in range(n)])
+
+Id1_plot   = tile(Id1, NCYCLES)
+Id2_plot   = tile(Id2, NCYCLES)
+Idtot_plot = tile(Id_total, NCYCLES)
+Vc_plot    = tile(Vc, NCYCLES) * 1e3      # 转 mV
+Vesr_plot  = tile(Vesr, NCYCLES) * 1e3    # 转 mV
+Vrip_plot  = tile(Vripple, NCYCLES) * 1e3 # 转 mV
 
 # 设置绘图风格
 plt.rcParams.update({
