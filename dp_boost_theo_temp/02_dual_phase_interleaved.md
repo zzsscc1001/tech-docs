@@ -71,7 +71,21 @@ $$I_{d2}(t) = I_{L,valley} + m(t - (D-0.5)T_s), \quad t \in [(D-0.5)T_s, \ 0.5T_
 
 ### 3.4 总 diode 电流
 
-$$I_d(t) = \begin{cases} 0 & t \in [0, \ (D-0.5)T_s] \quad \text{死区} \\ I_{L,valley} + m\bigl(t-(D-0.5)T_s\bigr) & t \in [(D-0.5)T_s, \ 0.5T_s] \quad \text{D2} \\ 0 & t \in [0.5T_s, \ DT_s] \quad \text{死区} \\ I_{L,peak} - m(t-DT_s) & t \in [DT_s, \ T_s] \quad \text{D1} \end{cases}$$
+**区间① $t \in [0, \ (D-0.5)T_s]$ — 死区**
+
+$$I_d(t) = 0$$
+
+**区间② $t \in [(D-0.5)T_s, \ 0.5T_s]$ — D2 导通**
+
+$$I_d(t) = I_{L,valley} + m\bigl(t - (D-0.5)T_s\bigr)$$
+
+**区间③ $t \in [0.5T_s, \ DT_s]$ — 死区**
+
+$$I_d(t) = 0$$
+
+**区间④ $t \in [DT_s, \ T_s]$ — D1 导通**
+
+$$I_d(t) = I_{L,peak} - m(t - DT_s)$$
 
 波形特征：两个三角脉冲，中间隔两段零电流死区，完全不交叠。D1 是下降斜坡，D2 是上升斜坡，关于中心对称。
 
