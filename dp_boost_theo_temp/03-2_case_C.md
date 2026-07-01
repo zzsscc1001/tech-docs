@@ -96,23 +96,23 @@ Id
 |------|----------|-----|-----|----|----|------|
 | ① | $[0, \delta T_s]$ | OFF | OFF | ✗ | ✓ | D2 下降（从上周期延续） |
 | ② | $[\delta T_s, DT_s]$ | OFF | ON/OFF | ✗ | ✗ | 死区 |
-| ③ | $[DT_s, (D+\delta)T_s]$ | OFF | OFF | ✓ | ✗ | D1 上升 |
+| ③ | $[DT_s, (D+\delta)T_s]$ | OFF | OFF | ✓ | ✗ | D1 下降 |
 | ④ | $[(D+\delta)T_s, 0.5T_s]$ | OFF | ON | ✗ | ✗ | 死区 |
 | ⑤ | $[0.5T_s, T_s]$ | ON | OFF | ✗ | ✗ | 死区 |
 
 **Phase 2 diode 在 $t=0$ 已导通**（从上一周期延续），在 $\delta T_s$ 时降为零。
 
-### 3.2 D2 电流
+### 3.2 D2 电流（下降斜坡）
 
-$$I_{d2}(t) = m(\delta T_s - t), \quad t \in [0, \ \delta T_s]$$
+$$I_{d2}(t) = I_{L,peak} - m \cdot t, \quad t \in [0, \ \delta T_s]$$
 
-边界值：$I_{d2}(0) = m \cdot \delta T_s$，$I_{d2}(\delta T_s) = 0$
+边界值：$I_{d2}(0) = I_{L,peak}$，$I_{d2}(\delta T_s) = 0$
 
-### 3.3 D1 电流
+### 3.3 D1 电流（下降斜坡）
 
-$$I_{d1}(t) = m(t - DT_s), \quad t \in [DT_s, \ (D+\delta)T_s]$$
+$$I_{d1}(t) = I_{L,peak} - m(t - DT_s), \quad t \in [DT_s, \ (D+\delta)T_s]$$
 
-边界值：$I_{d1}(DT_s) = 0$，$I_{d1}((D+\delta)T_s) = m \cdot \delta T_s$
+边界值：$I_{d1}(DT_s) = I_{L,peak}$，$I_{d1}((D+\delta)T_s) = 0$
 
 ### 3.4 总 diode 电流 $I_d(t)$
 
@@ -151,8 +151,9 @@ Id
     D2 死区 D1  死区  死区
 ```
 
-- D2 从 $t=0$ 开始下降（从上周期延续），D1 从 $DT_s$ 开始上升
-- 两个脉冲不关于中心对称
+- D2 从 $t=0$ 开始下降（从上周期延续），D1 从 $DT_s$ 开始下降
+- 两个脉冲都是下降斜坡，都从 $I_{L,peak}$ 降至 0
+- 两路波形形状相同，时间偏移 $T_s/2$
 - D2 的峰值在 $t=0$（即上一周期的末尾）
 - 三段死区，第二段和第三段合并后更宽
 
