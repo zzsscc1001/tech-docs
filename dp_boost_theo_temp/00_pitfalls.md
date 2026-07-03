@@ -15,7 +15,25 @@
 
 ---
 
-## 2. 效率 η 的使用方式
+## 2. DCM 下不能用 CCM 的 D 公式
+
+### CCM
+
+$$D = 1 - \frac{V_{in}}{V_{out}+V_f}$$
+
+仅由电压比决定，与负载无关。
+
+### DCM
+
+$D$ 随负载变化，从 DCM 能量平衡方程求解：
+
+$$D = \sqrt{\frac{\left[V_{out}^2 - (V_{in}-V_f) \cdot V_{out}\right] \cdot L}{R \cdot \eta \cdot V_{in}^2 \cdot T_s}}$$
+
+**CRM 边界的 D 也不能用 CCM 公式算。** 用 DCM 方程在 $D+D_d=1$ 的约束下联立求解。
+
+---
+
+## 3. 效率 η 的使用方式
 
 ### ✅ 正确：从功率守恒推输出电流
 
@@ -25,77 +43,59 @@ $$P_{out} = \eta \cdot P_{in}$$
 
 $$I_{out} = \frac{P_{out}}{V_{out}} = \frac{\eta \cdot 2 \cdot V_{in} \cdot I_{L,avg}}{V_{out}}$$
 
-### ❌ 错误：直接套用 $I_{out} = I_{L,avg} \times (1-D) \times \eta$
+### ❌ 错误：$I_{out} = I_{L,avg} \times (1-D) \times \eta$
 
-这个公式没有正确的物理依据。曾经导致 $R_{critical}$ 算出 268Ω（错误），实际应为 131Ω。
-
----
-
-## 2. 占空比 D 公式的选择
-
-### CCM 下
-
-$$D = 1 - \frac{V_{in}}{V_{out}+V_f}$$
-
-仅由电压比决定，与负载无关。
-
-### DCM 下
-
-D 随负载变化，不能用 CCM 的公式。需要从能量平衡方程数值求解。
-
-### ⚠️ 判断顺序
-
-**先判断 CCM/DCM，再选 D 公式。** 不能用 CCM 的 D 算出 $I_{L,valley} < 0$ 就说进入了 DCM——如果用 CCM 公式算出来的 D 导致 DCM，说明这个工况本身就不在 CCM，需要用 DCM 的方法重新解 D。
+这个公式没有物理依据。曾经导致 $R_{critical}$ 算出 268Ω（错误），实际应为 131Ω。
 
 ---
 
-## 3. 自洽性检查（必须做！）
+## 4. DCM 下 $D_d \neq 1-D$
+
+$$D_d = \delta = \frac{D \cdot V_{in}}{V_{out}+V_f-V_{in}}$$
+
+$D_d$ 是 diode 实际导通时间比，由 D 和电压比共同决定。$D + D_d < 1$ 时有死区（真正 DCM），$D + D_d = 1$ 时是 CRM 边界。
+
+---
+
+## 5. 自洽性检查（必须做！）
 
 每次算完后，检查以下条件是否自洽：
 
 | 检查项 | 条件 | 矛盾时说明 |
 |--------|------|-----------|
-| $I_{L,valley}$ 与 $L_{critical}$ | $I_{L,valley} > 0 \Leftrightarrow L > L_{critical}$ | 如果一个说 CCM 一个说 DCM，计算有误 |
-| $D + D_d$ | CCM: $D + D' = 1$；DCM: $D + D_d < 1$ | 如果 $D + D_d > 1$，D 公式用错了 |
-| 功率守恒 | $P_{out} = \eta \cdot P_{in}$ | 验证 $V_{out} \times I_{out}$ 是否等于 $\eta \times 2 \times V_{in} \times I_{L,avg}$ |
+| $D + D_d$ | CCM: $=1$；DCM: $< 1$；CRM: $=1$ | 如果 $D+D_d > 1$，D 公式用错 |
+| 功率守恒 | $V_{out} \times I_{out} = \eta \times 2 \times V_{in} \times I_{L,avg}$ | 必须验证 |
+| 子情况判定 | $D > 0.5$ → C1；$D+D_d < 0.5$ → C2a；else → C2b | 确认 Case 正确 |
 
 ---
 
-## 4. 单相 vs 总量
+## 6. C2b 的 D2 跨越周期边界
 
-| 量 | 单相 | 两相总量 |
-|----|------|---------|
-| 功率 | $P_{sp} = P_{dp}/2$ | $P_{dp} = V_{out}^2/R$ |
-| 电感电流 | $I_{L,avg,sp}$ | $I_{in,total} = 2 \cdot I_{L,avg,sp}$ |
-| 输出电流 | $I_{out}/2$ | $I_{out} = V_{out}/R$ |
-| 负载电阻 | — | $R$ 是总负载 |
+C2b（$D < 0.5$, $D+D_d > 0.5$）中，Phase 2 的 diode 电流是一个**跨越周期边界**的完整下降脉冲：
 
-**纹波电流 $\Delta I_L$ 是单相量**，不乘 2。
+- 主脉冲从 $(0.5+D)T_s$ 开始（Phase 2 关断），到 $(0.5+D+D_d)T_s$ 结束
+- 在 $[0, T_s]$ 窗口内显示为两段：末尾主脉冲 + 开头尾部
+- 它们是同一个脉冲的两部分，不是两个独立脉冲
 
 ---
 
-## 5. CRM 边界计算的正确流程
+## 7. 交错 Boost 四种情况
 
-1. 用 CCM 公式算 D（CRM 是 CCM 的边界，D 公式仍然适用）
-2. 算 $\Delta I_L = V_{in} \cdot D \cdot T_s / L$
-3. 边界条件：$I_{L,avg} = \Delta I_L / 2$
-4. 从功率守恒推 $I_{out}$：$I_{out} = \eta \cdot 2 \cdot V_{in} \cdot (\Delta I_L/2) / V_{out}$
-5. $R_{critical} = V_{out} / I_{out}$
-6. 验证：$P_{out} = V_{out} \times I_{out}$，$P_{in} = 2 \times V_{in} \times \Delta I_L / 2$，$\eta = P_{out}/P_{in}$
+| 编号 | 模式 | $D_d$ | diode 交叠 |
+|------|------|-------|-----------|
+| A | CCM | $< 0.5$ | 不交叠 |
+| B | CCM | $> 0.5$ | 交叠 |
+| C | DCM | $< 0.5$ | 不交叠 |
+| D | DCM | $> 0.5$ | 交叠 |
+
+Case C 再分：C1（$D>0.5$）/ C2a（$D+D_d<0.5$）/ C2b（$D+D_d>0.5$）
 
 ---
 
-## 6. 参考数值（本工况）
+## 8. 验证工况
 
-| 参数 | 值 |
-|------|-----|
-| $V_{in}$ | 6 V |
-| $V_{out}$ | 30 V |
-| $V_f$ | 0.7 V |
-| $L$ | 10 µH |
-| $f_s$ | 400 kHz |
-| $\eta$ | 0.95 |
-| $D$ (CCM) | 0.8046 |
-| $\Delta I_L$ | 1.207 A |
-| $R_{critical}$ | 131 Ω |
-| 仿真 $R_{critical}$ | ~150 Ω |
+| Case | $V_{in}$ | $V_{out}$ | $R$ | $D$ | $D_d$ | $D+D_d$ | $I_{L,peak}$ |
+|------|---------|---------|-----|-----|-------|---------|-------------|
+| C1 | 6V | 30V | 200Ω | 0.658 | 0.160 | 0.818 | 0.987 A |
+| C2a | 24V | 30V | 300Ω | 0.070 | 0.251 | 0.321 | 0.420 A |
+| C2b | 24V | 30V | 100Ω | 0.121 | 0.434 | 0.555 | 0.727 A |
